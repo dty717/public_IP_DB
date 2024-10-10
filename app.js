@@ -12,7 +12,8 @@ if (!mongoUri) {
     );
 }
 mongoose.connect(mongoUri, {
-    useNewUrlParser: true
+    useNewUrlParser: true,
+    useCreateIndex: true
 });
 mongoose.connection.on('connected', () => {
     console.log('Connected to mongo instance');
