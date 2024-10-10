@@ -25,6 +25,27 @@ function longToIp(long) {
     ].join('.');
 }
 
+
+// Function to expand an IP range and return all IPs
+const expandRange = (startIP, endIP) => {
+    const ips = [];
+    let start = ipToLong(startIP);
+    let end = ipToLong(endIP);
+    for (let ip = start; ip <= end; ip++) {
+        ips.push(longToIp(ip));
+    }
+    return ips;
+};
+
+// Function to get all IPs in a CIDR block
+const getIPsFromCIDR = (cidr) => {
+    const [baseIP, subnetMask] = cidr.split('/');
+    const numIPs = 2 ** (32 - subnetMask);
+    const baseLong = ipToLong(baseIP);
+    return Array.from({ length: numIPs }, (_, i) => longToIp(baseLong + i));
+};
+
+
 function generateIpRanges(startIp, endIp) {
     const startLong = ipToLong(startIp);
     const endLong = ipToLong(endIp);
@@ -91,4 +112,4 @@ function convertToCIDR(startIp, endIp) {
     return `${startIp}-${endIp}`;
 }
 
-module.exports = { generatePublicIpRangesWithMask, ipToLong ,convertToCIDR };
+module.exports = { generatePublicIpRangesWithMask, convertToCIDR, ipToLong, longToIp, expandRange, getIPsFromCIDR };

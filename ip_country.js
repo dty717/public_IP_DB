@@ -1,4 +1,5 @@
 const { exec } = require('child_process');
+const { expandRange, getIPsFromCIDR } = require('./IPTool');
 
 // Function to fetch country information for a given IP address
 const getCountry = (ip) => {
@@ -13,46 +14,18 @@ const getCountry = (ip) => {
     });
 };
 
-// Function to convert IP to long
-const ipToLong = (ip) => {
-    return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
-};
-
-// Function to convert long to IP
-const longToIp = (long) => {
-    return [
-        (long >>> 24) >>> 0,
-        (long >> 16 & 255) >>> 0,
-        (long >> 8 & 255) >>> 0,
-        (long & 255) >>> 0
-    ].join('.');
-};
-
-// Function to expand an IP range and return all IPs
-const expandRange = (startIP, endIP) => {
-    const ips = [];
-    let start = ipToLong(startIP);
-    let end = ipToLong(endIP);
-    for (let ip = start; ip <= end; ip++) {
-        ips.push(longToIp(ip));
-    }
-    return ips;
-};
-
-// Function to get all IPs in a CIDR block
-const getIPsFromCIDR = (cidr) => {
-    const [baseIP, subnetMask] = cidr.split('/');
-    const numIPs = 2 ** (32 - subnetMask);
-    const baseLong = ipToLong(baseIP);
-    return Array.from({ length: numIPs }, (_, i) => longToIp(baseLong + i));
-};
-
 // Main function to get country information for IPs
 const getCountriesForIPs = async (startIP, endIP) => {
     const ips = startIP.includes('/') ? getIPsFromCIDR(startIP) : (endIP ? expandRange(startIP, endIP) : expandRange(startIP, startIP));
     const results = [];
-
-    for (const ip of ips) {
+    var lastPercentage = 0
+    for (let index = 0; index < ips.length; index++) {
+        const ip = ips[index];
+        var percentage = parseInt(index / ips.length * 100);
+        if (percentage > lastPercentage) {
+            console.log(percentage + "%");
+            lastPercentage = percentage
+        }
         try {
             const country = await getCountry(ip);
             results.push({ ip, country });
