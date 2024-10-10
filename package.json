@@ -1,0 +1,22 @@
+{
+  "name": "public_ip_db",
+  "version": "1.0.0",
+  "description": "get all the public IP database.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dty717/public_IP_DB.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dty717/public_IP_DB/issues"
+  },
+  "homepage": "https://github.com/dty717/public_IP_DB#readme",
+  "dependencies": {
+    "mongoose": "^8.7.1"
+  }
+}
