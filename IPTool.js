@@ -45,30 +45,33 @@ const getIPsFromCIDR = (cidr) => {
     return Array.from({ length: numIPs }, (_, i) => longToIP(baseLong + i));
 };
 
-function getLastIPFromCIDR(cidr) {
+function getIPFromCIDR(cidr) {
     const [baseIP, subnetMask] = cidr.split('/');
     const baseLong = ipToLong(baseIP);
     const totalHosts = Math.pow(2, 32 - subnetMask); // Total number of IPs in this subnet
     const lastIPDecimal = baseLong + totalHosts - 1; // Add total IPs minus 1 to get the last IP
-    return longToIP(lastIPDecimal); // Convert decimal back to IP format
+    return {
+        startIP: baseIP,
+        endIP: longToIP(lastIPDecimal)
+    }; // Convert decimal back to IP format
 }
 
-function generateIPRanges(startIP, endIP ,blockNum = 1024) {
+function generateIPRanges(startIP, endIP, blockNum = 1024) {
     const startLong = ipToLong(startIP);
     const endLong = ipToLong(endIP);
     const ranges = [];
-    
+
     for (let i = startLong; i <= endLong; i += blockNum) {
-        ranges.push(`${longToIP(i)}/${32- (blockNum.toString(2).length - 1)}`);  // Adding /22 subnet mask
+        ranges.push(`${longToIP(i)}/${32 - (blockNum.toString(2).length - 1)}`);  // Adding /22 subnet mask
     }
 
     return ranges;
 }
-const generatePublicIPRangesWithMask = () => {
+const generateIPRangesWithMask = (IPRanges) => {
     // Generate and print IP addresses with subnet mask
     let allIPAddresses = [];
 
-    publicIPRanges.forEach(({ start, end }) => {
+    IPRanges.forEach(({ start, end }) => {
         const ranges = generateIPRanges(start, end);
         allIPAddresses = allIPAddresses.concat(ranges);
     });
@@ -119,4 +122,51 @@ function convertToCIDR(startIP, endIP) {
     return `${startIP}-${endIP}`;
 }
 
-module.exports = { generatePublicIPRangesWithMask, convertToCIDR, getTotalIPs, ipToLong, longToIP, expandRange, getIPsFromCIDR, getLastIPFromCIDR };
+// Function to combine IP ranges if they are contiguous
+function combineIPRanges(ipRanges) {
+    // Sort the ranges by start IP
+    ipRanges.sort((a, b) => ipToLong(a.startIP) - ipToLong(b.startIP));
+
+    const combinedRanges = [];
+
+    for (const range of ipRanges) {
+        if (combinedRanges.length === 0) {
+            combinedRanges.push({
+                startIP: range.startIP,
+                endIP: range.endIP
+            }); // Store only start and end IP
+        } else {
+            const lastRange = combinedRanges[combinedRanges.length - 1];
+            if (ipToLong(lastRange.endIP) + 1 === ipToLong(range.startIP)) {
+                // Merge ranges
+                lastRange.endIP = range.endIP; // Update the end IP of the last range
+            } else {
+                combinedRanges.push({
+                    startIP: range.startIP,
+                    endIP: range.endIP
+                }); // Store only start and end IP
+            }
+        }
+    }
+
+    return combinedRanges;
+}
+
+// Function to check if a new range overlaps with any existing ranges
+function isOverlapping(newRange, existingRanges) {
+    for (const range of existingRanges) {
+        // Check if there is an overlap
+        if (
+            ipToLong(newRange.startIP) <= ipToLong(range.endIP) &&
+            ipToLong(newRange.endIP) >= ipToLong(range.startIP)
+        ) {
+            return true; // Overlap found
+        }
+    }
+    return false; // No overlap if it reaches here
+}
+
+// Other parts of your script remain unchanged
+
+
+module.exports = { generateIPRangesWithMask, convertToCIDR, getTotalIPs, ipToLong, longToIP, expandRange, getIPsFromCIDR, getIPFromCIDR, combineIPRanges, isOverlapping, publicIPRanges };

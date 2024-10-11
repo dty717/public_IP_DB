@@ -1,7 +1,7 @@
 
 const mongoose = require('mongoose');
 const { getCountriesForIPs } = require('./ip_country');
-const { ipToLong, generatePublicIPRangesWithMask, convertToCIDR, getLastIPFromCIDR, longToIP, getTotalIPs } = require('./IPTool');
+const { ipToLong, generateIPRangesWithMask, convertToCIDR, getIPFromCIDR, longToIP, getTotalIPs,  combineIPRanges, isOverlapping } = require('./IPTool');
 const { mongoUri } = require('./config'); // Import the config file
 require('./models/IPSchema');
 
@@ -120,11 +120,29 @@ const generateFakePublicIPRangesWithMask = () => {
     ]
 };
 
-const processIPs = async () => {
+const processIPs = async (ipRanges) => {
+    var ipDatas = await IPSchema.find()
+    var combineRanges = combineIPRanges(ipDatas)
+    console.log(combineRanges);
 
-    var lastIPData = await IPSchema.findOne({}, {}, { sort: { endIPDecimal: -1 } })
-    var lastIPDecimal = ipToLong('1.0.0.0')
-    var lastStartIP = '1.0.0.0'
+    var IPList = generateIPRangesWithMask();
+    var IPListLen = IPList.length;
+    // Loop through the array and remove the first element if it's greater than 1
+    for (let i = 0; i < IPListLen; i++) {
+        if (isOverlapping(getIPFromCIDR(IPList[i]), combineRanges)) {
+            // IPList.shift(); // Remove the first element
+        } else {
+            IPList.splice(0,i);
+            break; // Exit the loop if the first element is not greater than 1
+        }
+    }
+    var firstIPRange = getIPFromCIDR(IPList[0])
+    console.log(ipToLong(firstIPRange.startIP) + 1)
+    var lastIPData = await IPSchema.findOne({
+        endIPDecimal: ipToLong(firstIPRange.startIP) - 1
+    })
+    var lastIPDecimal = ipToLong(firstIPRange.startIP);
+    var lastStartIP = firstIPRange.startIP;
     var lastCountry = "";
     var _id = "";
     if (lastIPData) {
@@ -133,16 +151,7 @@ const processIPs = async () => {
         lastCountry = lastIPData.country
         _id = lastIPData.id;
     }
-    var IPList = generatePublicIPRangesWithMask();
-    var IPListLen = IPList.length;
-    // Loop through the array and remove the first element if it's greater than 1
-    for (let i = 0; i < IPListLen; i++) {
-        if (ipToLong(IPList[i]) < lastIPDecimal) { // Check if the first element is greater than 1
-            IPList.shift(); // Remove the first element
-        } else {
-            break; // Exit the loop if the first element is not greater than 1
-        }
-    }
+    
 
     console.log('Final Array:', IPList); // Output the remaining elements
 
@@ -155,7 +164,7 @@ const processIPs = async () => {
     var needUpdate = true
     // var needUpdate = false
     for (const entry of IPList) {
-        var lastEntryIP = getLastIPFromCIDR(entry);
+        var lastEntryIP = getIPFromCIDR(entry).endIP;
         const ips = await getCountriesForIPs(longToIP(lastIPDecimal), lastEntryIP);
         for (let ipIndex = 0; ipIndex < ips.length; ipIndex++) {
             const { ip, country } = ips[ipIndex];
@@ -258,4 +267,6 @@ const processIPs = async () => {
 
 };
 
-processIPs();
+processIPs(
+    [{ start: '1.0.0.0', end: '1.255.255.255' },]
+);
