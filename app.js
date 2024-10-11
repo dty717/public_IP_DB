@@ -125,7 +125,6 @@ const generateFakePublicIPRangesWithMask = () => {
 const processIPs = async (ipRanges) => {
     var ipDatas = await IPSchema.find()
     var combineRanges = combineIPRanges(ipDatas)
-    console.log(combineRanges);
 
     var IPList = generateIPRangesWithMask(ipRanges);
     var IPListLen = IPList.length;
@@ -279,6 +278,27 @@ if (_startIP && _endIP) {
     );
     processIPs(
         [{ start: '2.0.0.0', end: '2.255.255.255' },]
+    );
+    processIPs(
+        [{ start: '3.0.0.0', end: '3.255.255.255' },]
+    );
+    processIPs(
+        [{ start: '4.0.0.0', end: '4.255.255.255' },]
+    );
+    processIPs(
+        [{ start: '5.0.0.0', end: '5.255.255.255' },]
+    );
+    processIPs(
+        [{ start: '6.0.0.0', end: '6.255.255.255' },]
+    );
+    processIPs(
+        [{ start: '7.0.0.0', end: '7.255.255.255' },]
+    );
+    processIPs(
+        [{ start: '8.0.0.0', end: '8.255.255.255' },]
+    );
+    processIPs(
+        [{ start: '9.0.0.0', end: '9.255.255.255' },]
     );
 }
 
