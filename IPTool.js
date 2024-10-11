@@ -1,4 +1,4 @@
-const publicIpRanges = [
+const publicIPRanges = [
     { start: '1.0.0.0', end: '9.255.255.255' },
     { start: '11.0.0.0', end: '126.255.255.255' },
     { start: '129.0.0.0', end: '169.253.255.255' },
@@ -16,7 +16,7 @@ function ipToLong(ip) {
     }, 0) >>> 0;
 }
 
-function longToIp(long) {
+function longToIP(long) {
     return [
         (long >>> 24) & 255,
         (long >>> 16) & 255,
@@ -32,7 +32,7 @@ const expandRange = (startIP, endIP) => {
     let start = ipToLong(startIP);
     let end = ipToLong(endIP);
     for (let ip = start; ip <= end; ip++) {
-        ips.push(longToIp(ip));
+        ips.push(longToIP(ip));
     }
     return ips;
 };
@@ -42,32 +42,39 @@ const getIPsFromCIDR = (cidr) => {
     const [baseIP, subnetMask] = cidr.split('/');
     const numIPs = 2 ** (32 - subnetMask);
     const baseLong = ipToLong(baseIP);
-    return Array.from({ length: numIPs }, (_, i) => longToIp(baseLong + i));
+    return Array.from({ length: numIPs }, (_, i) => longToIP(baseLong + i));
 };
 
+function getLastIPFromCIDR(cidr) {
+    const [baseIP, subnetMask] = cidr.split('/');
+    const baseLong = ipToLong(baseIP);
+    const totalHosts = Math.pow(2, 32 - subnetMask); // Total number of IPs in this subnet
+    const lastIPDecimal = baseLong + totalHosts - 1; // Add total IPs minus 1 to get the last IP
+    return longToIP(lastIPDecimal); // Convert decimal back to IP format
+}
 
-function generateIpRanges(startIp, endIp) {
-    const startLong = ipToLong(startIp);
-    const endLong = ipToLong(endIp);
+function generateIPRanges(startIP, endIP) {
+    const startLong = ipToLong(startIP);
+    const endLong = ipToLong(endIP);
     const ranges = [];
 
     for (let i = startLong; i <= endLong; i += 1024) {
-        ranges.push(`${longToIp(i)}/22`);  // Adding /22 subnet mask
+        ranges.push(`${longToIP(i)}/22`);  // Adding /22 subnet mask
     }
 
     return ranges;
 }
-const generatePublicIpRangesWithMask = () => {
+const generatePublicIPRangesWithMask = () => {
     // Generate and print IP addresses with subnet mask
-    let allIpAddresses = [];
+    let allIPAddresses = [];
 
-    publicIpRanges.forEach(({ start, end }) => {
-        const ranges = generateIpRanges(start, end);
-        allIpAddresses = allIpAddresses.concat(ranges);
+    publicIPRanges.forEach(({ start, end }) => {
+        const ranges = generateIPRanges(start, end);
+        allIPAddresses = allIPAddresses.concat(ranges);
     });
 
     // Print all IP addresses with subnet mask, each on a new line
-    return allIpAddresses;
+    return allIPAddresses;
 };
 
 
@@ -78,9 +85,9 @@ function ipToBinary(ip) {
     }).join('');
 }
 
-function commonPrefixLength(startIp, endIp) {
-    const startBinary = ipToBinary(startIp);
-    const endBinary = ipToBinary(endIp);
+function commonPrefixLength(startIP, endIP) {
+    const startBinary = ipToBinary(startIP);
+    const endBinary = ipToBinary(endIP);
 
     let commonLength = 0;
     for (let i = 0; i < startBinary.length; i++) {
@@ -93,23 +100,23 @@ function commonPrefixLength(startIp, endIp) {
     return commonLength;
 }
 
-function getTotalIPs(startIp, endIp) {
-    const startDecimal = ipToLong(startIp);
-    const endDecimal = ipToLong(endIp);
+function getTotalIPs(startIP, endIP) {
+    const startDecimal = ipToLong(startIP);
+    const endDecimal = ipToLong(endIP);
     return endDecimal - startDecimal + 1; // Total number of IPs in the range
 }
 
-function convertToCIDR(startIp, endIp) {
-    const totalIPs = getTotalIPs(startIp, endIp);
-    const commonLength = commonPrefixLength(startIp, endIp);
+function convertToCIDR(startIP, endIP) {
+    const totalIPs = getTotalIPs(startIP, endIP);
+    const commonLength = commonPrefixLength(startIP, endIP);
 
     // Check if the total IPs fit within the CIDR block
     if (commonLength <= 24 && totalIPs == (1 << (32 - commonLength))) {
-        return `${startIp}/${commonLength}`;
+        return `${startIP}/${commonLength}`;
     }
 
-    // Return the range in "startIp-endIp" format if it doesn't fit a CIDR block
-    return `${startIp}-${endIp}`;
+    // Return the range in "startIP-endIP" format if it doesn't fit a CIDR block
+    return `${startIP}-${endIP}`;
 }
 
-module.exports = { generatePublicIpRangesWithMask, convertToCIDR, ipToLong, longToIp, expandRange, getIPsFromCIDR };
+module.exports = { generatePublicIPRangesWithMask, convertToCIDR, ipToLong, longToIP, expandRange, getIPsFromCIDR, getLastIPFromCIDR };
