@@ -277,5 +277,8 @@ if (_startIP && _endIP) {
     processIPs(
         [{ start: '1.0.0.0', end: '1.255.255.255' },]
     );
+    processIPs(
+        [{ start: '2.0.0.0', end: '2.255.255.255' },]
+    );
 }
 

@@ -24,7 +24,7 @@ const getCountriesForIPs = async (startIP, endIP) => {
         const ip = ips[index];
         var percentage = parseInt(index / ips.length * 100);
         if (percentage > lastPercentage) {
-            console.log(percentage + "%");
+            process.stdout.write(startIP +":"+ percentage + "%");
             lastPercentage = percentage
         }
         try {
