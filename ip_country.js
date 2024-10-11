@@ -9,8 +9,8 @@ const getCountry = (ip) => {
             if (error) {
                 return reject(`Error: ${error.message}`);
             }
-            if (stdout.includes('ERROR') != -1) {
-                console.log(stdout)
+            if (stdout.includes('ERROR')) {
+                console.log(ip, stdout)
                 process.exit(1);
             }
             const countryMatch = stdout.match(/[Cc]ountry:\s*(\w+)/);
