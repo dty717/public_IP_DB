@@ -1,17 +1,13 @@
-// const publicIPRanges = [
-//     { start: '1.0.0.0', end: '9.255.255.255' },
-//     { start: '11.0.0.0', end: '126.255.255.255' },
-//     { start: '129.0.0.0', end: '169.253.255.255' },
-//     { start: '169.255.0.0', end: '172.15.255.255' },
-//     { start: '172.32.0.0', end: '191.0.1.255' },
-//     { start: '192.0.3.0', end: '192.88.98.255' },
-//     { start: '192.88.100.0', end: '192.167.255.255' },
-//     { start: '192.169.0.0', end: '198.17.255.255' },
-//     { start: '198.20.0.0', end: '223.255.255.255' },
-// ];
-
 const publicIPRanges = [
-    { start: '1.0.0.0', end: '1.0.0.255' }
+    { start: '1.0.0.0', end: '9.255.255.255' },
+    { start: '11.0.0.0', end: '126.255.255.255' },
+    { start: '129.0.0.0', end: '169.253.255.255' },
+    { start: '169.255.0.0', end: '172.15.255.255' },
+    { start: '172.32.0.0', end: '191.0.1.255' },
+    { start: '192.0.3.0', end: '192.88.98.255' },
+    { start: '192.88.100.0', end: '192.167.255.255' },
+    { start: '192.169.0.0', end: '198.17.255.255' },
+    { start: '198.20.0.0', end: '223.255.255.255' },
 ];
 
 function ipToLong(ip) {
@@ -57,7 +53,7 @@ function getLastIPFromCIDR(cidr) {
     return longToIP(lastIPDecimal); // Convert decimal back to IP format
 }
 
-function generateIPRanges(startIP, endIP ,blockNum = 256) {
+function generateIPRanges(startIP, endIP ,blockNum = 1024) {
     const startLong = ipToLong(startIP);
     const endLong = ipToLong(endIP);
     const ranges = [];
@@ -107,7 +103,7 @@ function commonPrefixLength(startIP, endIP) {
 function getTotalIPs(startIP, endIP) {
     const startDecimal = ipToLong(startIP);
     const endDecimal = ipToLong(endIP);
-    return endDecimal - startDecimal + 1; // Total number of IPs in the range
+    return Math.abs(endDecimal - startDecimal + 1); // Total number of IPs in the range
 }
 
 function convertToCIDR(startIP, endIP) {
@@ -115,7 +111,7 @@ function convertToCIDR(startIP, endIP) {
     const commonLength = commonPrefixLength(startIP, endIP);
 
     // Check if the total IPs fit within the CIDR block
-    if (commonLength <= 24 && totalIPs == (1 << (32 - commonLength))) {
+    if (commonLength <= 32 && totalIPs == (1 << (32 - commonLength))) {
         return `${startIP}/${commonLength}`;
     }
 
@@ -123,4 +119,4 @@ function convertToCIDR(startIP, endIP) {
     return `${startIP}-${endIP}`;
 }
 
-module.exports = { generatePublicIPRangesWithMask, convertToCIDR, ipToLong, longToIP, expandRange, getIPsFromCIDR, getLastIPFromCIDR };
+module.exports = { generatePublicIPRangesWithMask, convertToCIDR, getTotalIPs, ipToLong, longToIP, expandRange, getIPsFromCIDR, getLastIPFromCIDR };

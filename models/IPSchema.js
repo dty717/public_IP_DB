@@ -11,33 +11,35 @@ const IPSchema = new mongoose.Schema({
     startIP:
     {
         type: String,
-        required: true
+        required: true,
     },
     endIP:
     {
         type: String,
-        required: true
+        required: true,
     },
     startIPDecimal:
     {
         type: Number,
-        required: true
+        required: true,
+        unique:true
     },
     endIPDecimal:
     {
         type: Number,
-        required: true
+        required: true,
+        unique:true
     },
     total:
     {
         type: Number,
         required: true
     },
-    ipString:
+    CIDR:
     {
         type: String,
         required: false
     },
 });
 
-mongoose.model('IPSchema', IPSchema);
+mongoose.model('IP', IPSchema);
