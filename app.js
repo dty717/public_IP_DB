@@ -5,6 +5,8 @@ const { ipToLong, generateIPRangesWithMask, convertToCIDR, getIPFromCIDR, longTo
 const { mongoUri } = require('./config'); // Import the config file
 require('./models/IPSchema');
 
+const _startIP = process.argv.length === 4 ? process.argv[2] : null;
+const _endIP = process.argv.length === 4 ? process.argv[3] : null;
 
 if (!mongoUri) {
     throw new Error(
@@ -267,6 +269,13 @@ const processIPs = async (ipRanges) => {
 
 };
 
-processIPs(
-    [{ start: '1.0.0.0', end: '1.255.255.255' },]
-);
+if (_startIP && _endIP) {
+    processIPs(
+        [{ start: _startIP, end: _endIP },]
+    );
+} else {
+    processIPs(
+        [{ start: '1.0.0.0', end: '1.255.255.255' },]
+    );
+}
+
