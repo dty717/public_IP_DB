@@ -25,14 +25,16 @@ mongoose.connection.on('error', err => {
 const IPSchema = mongoose.model('IPSchema');
 
 const processIPs = async () => {
-    // await 
+    
     var lastIPData = await IPSchema.findOne({ endIP: -1 })
     var lastIPDecimal = ipToLong('1.0.0.0')
+    var lastCountry = ""
     if (lastIPData) {
-        lastIPDecimal = ipToLong(lastIPDecimal.endIP + 1)
+        lastIPDecimal = lastIPData.endIPDecimal + 1;
+        lastCountry = lastIPData.country
     }
     var IPList = generatePublicIPRangesWithMask();
-
+    
     // Loop through the array and remove the first element if it's greater than 1
     for (let i = 0; i < IPList.length; i++) {
         if (ipToLong(IPList[0]) > lastIPDecimal) { // Check if the first element is greater than 1
@@ -46,12 +48,44 @@ const processIPs = async () => {
     
     // startIP    endIP
     //               IP
-    //        s'             e'      
-    console.log(lastIPDecimal)
+    //        s'             e'
+    var newIPData = {
+        startIPDecimal: 0,
+        endIPDecimal: 0xffff_ffff,
+    }
+    var needInitUpdate = true
     for (const entry of IPList) {
         var lastEntryIP = getLastIPFromCIDR(entry);
         console.log({entry})
-        const ips = await getCountriesForIPs(lastIPDecimal, lastEntryIP);
+        const ips = await getCountriesForIPs(longToIP(lastIPDecimal), lastEntryIP);
+        for (let ipIndex = 0; ipIndex < ips.length; ipIndex++) {
+            const { ip, country } = ips[ipIndex];
+            if(needInitUpdate){
+                if (country != lastCountry){
+                    needInitUpdate = false;
+                    if (newIPData.startIPDecimal != 0){
+                        // update last ip data
+                        newIPData.startIPDecimal = 0;
+                        continue;
+                    }
+                }else{
+                    if (newIPData.startIPDecimal != 0) {
+                        newIPData.startIPDecimal = lastIPDecimal
+                    }
+                    newIPData.endIPDecimal = ip;
+                }
+                continue;
+            }
+            console.log(ip)
+            break;
+            // {
+            //     if(newIPData.finished){
+
+            //     }else{
+    
+            //     }
+            // }
+        }
         console.log(ips);
     }
 };

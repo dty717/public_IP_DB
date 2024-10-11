@@ -10,10 +10,20 @@ const IPSchema = new mongoose.Schema({
     },
     startIP:
     {
-        type: Number,
+        type: String,
         required: true
     },
     endIP:
+    {
+        type: String,
+        required: true
+    },
+    startIPDecimal:
+    {
+        type: Number,
+        required: true
+    },
+    endIPDecimal:
     {
         type: Number,
         required: true

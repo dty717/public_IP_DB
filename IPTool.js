@@ -1,13 +1,17 @@
+// const publicIPRanges = [
+//     { start: '1.0.0.0', end: '9.255.255.255' },
+//     { start: '11.0.0.0', end: '126.255.255.255' },
+//     { start: '129.0.0.0', end: '169.253.255.255' },
+//     { start: '169.255.0.0', end: '172.15.255.255' },
+//     { start: '172.32.0.0', end: '191.0.1.255' },
+//     { start: '192.0.3.0', end: '192.88.98.255' },
+//     { start: '192.88.100.0', end: '192.167.255.255' },
+//     { start: '192.169.0.0', end: '198.17.255.255' },
+//     { start: '198.20.0.0', end: '223.255.255.255' },
+// ];
+
 const publicIPRanges = [
-    { start: '1.0.0.0', end: '9.255.255.255' },
-    { start: '11.0.0.0', end: '126.255.255.255' },
-    { start: '129.0.0.0', end: '169.253.255.255' },
-    { start: '169.255.0.0', end: '172.15.255.255' },
-    { start: '172.32.0.0', end: '191.0.1.255' },
-    { start: '192.0.3.0', end: '192.88.98.255' },
-    { start: '192.88.100.0', end: '192.167.255.255' },
-    { start: '192.169.0.0', end: '198.17.255.255' },
-    { start: '198.20.0.0', end: '223.255.255.255' },
+    { start: '1.0.0.0', end: '1.0.0.255' }
 ];
 
 function ipToLong(ip) {
@@ -53,13 +57,13 @@ function getLastIPFromCIDR(cidr) {
     return longToIP(lastIPDecimal); // Convert decimal back to IP format
 }
 
-function generateIPRanges(startIP, endIP) {
+function generateIPRanges(startIP, endIP ,blockNum = 256) {
     const startLong = ipToLong(startIP);
     const endLong = ipToLong(endIP);
     const ranges = [];
-
-    for (let i = startLong; i <= endLong; i += 1024) {
-        ranges.push(`${longToIP(i)}/22`);  // Adding /22 subnet mask
+    
+    for (let i = startLong; i <= endLong; i += blockNum) {
+        ranges.push(`${longToIP(i)}/${32- (blockNum.toString(2).length - 1)}`);  // Adding /22 subnet mask
     }
 
     return ranges;
