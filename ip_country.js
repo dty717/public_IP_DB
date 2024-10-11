@@ -3,6 +3,9 @@ const { expandRange, getIPsFromCIDR } = require('./IPTool');
 
 // Function to fetch country information for a given IP address
 const getCountry = (ip) => {
+    // return new Promise((resolve, reject) => {
+    //     resolve("AU");
+    // });
     return new Promise((resolve, reject) => {
         exec(`whois ${ip}`, (error, stdout) => {
             if (error) {

@@ -125,7 +125,7 @@ const processIPs = async (ipRanges) => {
     var combineRanges = combineIPRanges(ipDatas)
     console.log(combineRanges);
 
-    var IPList = generateIPRangesWithMask();
+    var IPList = generateIPRangesWithMask(ipRanges);
     var IPListLen = IPList.length;
     // Loop through the array and remove the first element if it's greater than 1
     for (let i = 0; i < IPListLen; i++) {
