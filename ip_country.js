@@ -5,9 +5,13 @@ const { expandRange, getIPsFromCIDR } = require('./IPTool');
 const getCountry = (ip) => {
     // return new Promise(resolve => setTimeout(()=>resolve("AU"), 10));
     return new Promise((resolve, reject) => {
-        exec(`whois ${ip} | grep -i "country" | head -n 1`, (error, stdout) => {
+        exec(`whois ${ip}`, (error, stdout) => {
             if (error) {
                 return reject(`Error: ${error.message}`);
+            }
+            if (stdout.includes('ERROR') != -1) {
+                console.log(stdout)
+                process.exit(1);
             }
             const countryMatch = stdout.match(/[Cc]ountry:\s*(\w+)/);
             resolve(countryMatch ? countryMatch[1] : 'Unknown');
