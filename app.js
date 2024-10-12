@@ -1,7 +1,7 @@
 
 const mongoose = require('mongoose');
 const { getCountriesForIPs } = require('./ip_country');
-const { ipToLong, generateIPRangesWithMask, convertToCIDR, getIPFromCIDR, longToIP, getTotalIPs,  combineIPRanges, isOverlapping } = require('./IPTool');
+const { ipToLong, generateIPRangesWithMask, convertToCIDR, getIPFromCIDR, longToIP, getTotalIPs, combineIPRanges, isOverlapping, publicIPRanges } = require('./IPTool');
 const { mongoUri } = require('./config'); // Import the config file
 require('./models/IPSchema');
 
@@ -133,7 +133,7 @@ const processIPs = async (ipRanges) => {
         if (isOverlapping(getIPFromCIDR(IPList[i]), combineRanges)) {
             // IPList.shift(); // Remove the first element
         } else {
-            IPList.splice(0,i);
+            IPList.splice(0, i);
             break; // Exit the loop if the first element is not greater than 1
         }
     }
@@ -152,7 +152,7 @@ const processIPs = async (ipRanges) => {
         lastCountry = lastIPData.country
         _id = lastIPData.id;
     }
-    
+
 
     console.log('Final Array:', IPList); // Output the remaining elements
 
@@ -273,32 +273,6 @@ if (_startIP && _endIP) {
         [{ start: _startIP, end: _endIP },]
     );
 } else {
-    processIPs(
-        [{ start: '1.0.0.0', end: '1.255.255.255' },]
-    );
-    processIPs(
-        [{ start: '2.0.0.0', end: '2.255.255.255' },]
-    );
-    processIPs(
-        [{ start: '3.0.0.0', end: '3.255.255.255' },]
-    );
-    processIPs(
-        [{ start: '4.0.0.0', end: '4.255.255.255' },]
-    );
-    processIPs(
-        [{ start: '5.0.0.0', end: '5.255.255.255' },]
-    );
-    processIPs(
-        [{ start: '6.0.0.0', end: '6.255.255.255' },]
-    );
-    processIPs(
-        [{ start: '7.0.0.0', end: '7.255.255.255' },]
-    );
-    processIPs(
-        [{ start: '8.0.0.0', end: '8.255.255.255' },]
-    );
-    processIPs(
-        [{ start: '9.0.0.0', end: '9.255.255.255' },]
-    );
+    processIPs(publicIPRanges);
 }
 
