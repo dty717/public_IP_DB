@@ -24,6 +24,11 @@ const getCountriesForIPs = async (startIP, endIP) => {
     const ips = startIP.includes('/') ? getIPsFromCIDR(startIP) : (endIP ? expandRange(startIP, endIP) : expandRange(startIP, startIP));
     const results = [];
     var lastPercentage = 0
+
+    const maxRetries = 3; // Number of times to retry
+    let attempts = 0; // Current attempt count
+    let success = false; // Success flag
+    const retryDuring = 500;
     for (let index = 0; index < ips.length; index++) {
         const ip = ips[index];
         var percentage = parseInt(index / ips.length * 100);
@@ -31,13 +36,26 @@ const getCountriesForIPs = async (startIP, endIP) => {
             console.log(percentage + "%");
             lastPercentage = percentage
         }
-        try {
-            const country = await getCountry(ip);
-            results.push({ ip, country });
-        } catch (error) {
-            console.error(`Failed to get country for ${ip}: ${error}`);
-            results.push({ ip, country: 'Error' });
+
+        while (attempts < maxRetries && !success) {
+            try {
+                attempts++;
+                const country = await getCountry(ip);
+                results.push({ ip, country });
+                success = true; // Set success to true if no error occurs
+            } catch (error) {
+                console.error(`Attempt ${attempts} Failed to get country for ${ip}: ${error}`);
+
+                if (attempts >= maxRetries) {
+                    console.error('Max retries reached. Exiting.');
+                    process.exit(1);
+                    // throw new Error('Failed to get countries for the given IP range after multiple attempts.');
+                }
+                await new Promise(resolve => setTimeout(resolve, retryDuring)); // 1-second delay
+            }
         }
+        success = false; 
+        attempts = 0;
     }
     return results;
 };

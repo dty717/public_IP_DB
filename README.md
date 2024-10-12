@@ -20,6 +20,11 @@ Before installing this project, ensure you have the following software installed
 
 ## Installation
 
+0. Install the whois:
+```bash
+sudo apt-get install whois
+```
+
 1. Clone the repository:
 
 ```bash
