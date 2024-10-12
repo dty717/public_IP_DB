@@ -128,12 +128,20 @@ const processIPs = async (ipRanges) => {
 
     var IPList = generateIPRangesWithMask(ipRanges);
     var IPListLen = IPList.length;
+    if(!IPListLen){
+        console.log("IPListLen error:", ipRanges)
+    }
+    var lastIPList = getIPFromCIDR(IPList[0]).startIP
     // Loop through the array and remove the first element if it's greater than 1
     for (let i = 0; i < IPListLen; i++) {
         if (isOverlapping(getIPFromCIDR(IPList[i]), combineRanges)) {
             // IPList.shift(); // Remove the first element
         } else {
-            IPList.splice(0, i);
+            if (i > 1) {
+                lastIPList = getIPFromCIDR(IPList.splice(0, i)[i - 1]).startIP
+            } else {
+                IPList.splice(0, i);
+            }
             break; // Exit the loop if the first element is not greater than 1
         }
     }
@@ -141,7 +149,10 @@ const processIPs = async (ipRanges) => {
     console.log(ipToLong(firstIPRange.startIP) + 1)
     var lastIPData = await IPSchema.findOne({
         endIPDecimal: {
-            $lte: ipToLong(firstIPRange.startIP) - 1
+            $lte: ipToLong(firstIPRange.startIP) - 1,
+        },
+        startIPDecimal:{
+            $lte: ipToLong(lastIPList)
         }
     }, {}, {
         sort: {
