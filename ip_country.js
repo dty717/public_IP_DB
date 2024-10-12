@@ -14,7 +14,12 @@ const getCountry = (ip) => {
                 process.exit(1);
             }
             const countryMatch = stdout.match(/[Cc]ountry:\s*(\w+)/);
-            resolve(countryMatch ? countryMatch[1] : 'Unknown');
+            if (countryMatch) {
+                resolve(countryMatch[1]);
+            } else {
+                console.log(ip, stdout)
+                process.exit(1);
+            }
         });
     });
 };
