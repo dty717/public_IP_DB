@@ -159,7 +159,7 @@ const processIPs = async (ipRanges) => {
     var newIPData = {
         startIPDecimal: 0,
         startIP: "0.0.0.0",
-        endIPDecimal: 0xffff_ffff,
+        endIPDecimal: 0xffffffff,
         endIP: "255.255.255.255",
     }
     var needUpdate = true
