@@ -140,7 +140,13 @@ const processIPs = async (ipRanges) => {
     var firstIPRange = getIPFromCIDR(IPList[0])
     console.log(ipToLong(firstIPRange.startIP) + 1)
     var lastIPData = await IPSchema.findOne({
-        endIPDecimal: ipToLong(firstIPRange.startIP) - 1
+        endIPDecimal: {
+            $lte: ipToLong(firstIPRange.startIP) - 1
+        }
+    }, {}, {
+        sort: {
+            endIPDecimal: -1
+        }
     })
     var lastIPDecimal = ipToLong(firstIPRange.startIP);
     var lastStartIP = firstIPRange.startIP;
