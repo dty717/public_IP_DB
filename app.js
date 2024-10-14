@@ -1,7 +1,7 @@
 
 const mongoose = require('mongoose');
 const { getCountriesForIPs } = require('./ip_country');
-const { ipToLong, generateIPRangesWithMask, convertToCIDR, getIPFromCIDR, longToIP, getTotalIPs, isOverlapping, publicIPRanges, combineIPRanges, getNonOverlappingRanges } = require('./IPTool');
+const { ipToLong, generateIPRangesWithMask, convertToCIDR, getIPFromCIDR, longToIP, getTotalIPs, isOverlapping, publicIPRanges, combineIPRanges, getNonOverlappingRanges, getIPsFromCIDR, expandRange } = require('./IPTool');
 const { mongoUri } = require('./config'); // Import the config file
 require('./models/IPSchema');
 
@@ -27,92 +27,45 @@ mongoose.connection.on('error', err => {
 const IPSchema = mongoose.model('IP');
 
 // Main function to get country information for IPs
-const getCountriesForIPsFake = async (startIP, endIP) => {
-    switch (startIP) {
-        case '1.0.0.0':
-            return [
-                { ip: '1.0.0.0', country: 'AU' },
-                { ip: '1.0.0.1', country: 'AU' },
-                { ip: '1.0.0.2', country: 'CN' },
-                { ip: '1.0.0.3', country: 'CN' },
-                { ip: '1.0.0.4', country: 'AU' },
-                { ip: '1.0.0.5', country: 'AU' },
-                { ip: '1.0.0.6', country: 'AU' },
-                { ip: '1.0.0.7', country: 'AU' },
-                { ip: '1.0.0.8', country: 'CN' },
-                { ip: '1.0.0.9', country: 'CN' },
-                { ip: '1.0.0.10', country: 'CN' },
-                { ip: '1.0.0.11', country: 'CN' },
-                { ip: '1.0.0.12', country: 'US' },
-                { ip: '1.0.0.13', country: 'US' },
-                { ip: '1.0.0.14', country: 'US' },
-                { ip: '1.0.0.15', country: 'US' },
-            ];
-        case '1.0.0.16':
-            return [
-                { ip: '1.0.0.16', country: 'US' },
-                { ip: '1.0.0.17', country: 'US' },
-                { ip: '1.0.0.18', country: 'CN' },
-                { ip: '1.0.0.19', country: 'CN' },
-                { ip: '1.0.0.20', country: 'CN' },
-                { ip: '1.0.0.21', country: 'CN' },
-                { ip: '1.0.0.22', country: 'CN' },
-                { ip: '1.0.0.23', country: 'CN' },
-                { ip: '1.0.0.24', country: 'CN' },
-                { ip: '1.0.0.25', country: 'AU' },
-                { ip: '1.0.0.26', country: 'CN' },
-                { ip: '1.0.0.27', country: 'AU' },
-                { ip: '1.0.0.28', country: 'CN' },
-                { ip: '1.0.0.29', country: 'CN' },
-                { ip: '1.0.0.30', country: 'CN' },
-                { ip: '1.0.0.31', country: 'CN' },
-            ];
-        case '1.0.0.32':
-            return [
-                { ip: '1.0.0.32', country: 'CN' },
-                { ip: '1.0.0.33', country: 'CN' },
-                { ip: '1.0.0.34', country: 'US' },
-                { ip: '1.0.0.35', country: 'US' },
-                { ip: '1.0.0.36', country: 'US' },
-                { ip: '1.0.0.37', country: 'CN' },
-                { ip: '1.0.0.38', country: 'CN' },
-                { ip: '1.0.0.39', country: 'CN' },
-                { ip: '1.0.0.40', country: 'CN' },
-                { ip: '1.0.0.41', country: 'CN' },
-                { ip: '1.0.0.42', country: 'CN' },
-                { ip: '1.0.0.43', country: 'CN' },
-                { ip: '1.0.0.44', country: 'CN' },
-                { ip: '1.0.0.45', country: 'CN' },
-                { ip: '1.0.0.46', country: 'CN' },
-                { ip: '1.0.0.47', country: 'CN' },
-            ];
-        case '1.0.0.48':
-            return [
-                { ip: '1.0.0.48', country: 'CN' },
-                { ip: '1.0.0.49', country: 'CN' },
-                { ip: '1.0.0.50', country: 'CN' },
-                { ip: '1.0.0.51', country: 'CN' },
-                { ip: '1.0.0.52', country: 'CN' },
-                { ip: '1.0.0.53', country: 'CN' },
-                { ip: '1.0.0.54', country: 'CN' },
-                { ip: '1.0.0.55', country: 'CN' },
-                { ip: '1.0.0.56', country: 'CN' },
-                { ip: '1.0.0.57', country: 'CN' },
-                { ip: '1.0.0.58', country: 'CN' },
-                { ip: '1.0.0.59', country: 'CN' },
-                { ip: '1.0.0.60', country: 'CN' },
-                { ip: '1.0.0.61', country: 'CN' },
-                { ip: '1.0.0.62', country: 'CN' },
-                { ip: '1.0.0.63', country: 'CN' },
-            ];
-        default:
-            return [
-                { ip: '1.0.0.1', country: 'AU' },
-                { ip: '1.0.0.2', country: 'AU' },
-                { ip: '1.0.0.3', country: 'AU' },
-                { ip: '1.0.0.4', country: 'AU' }
-            ];
+const getFakeCountriesForIPs = async (startIP, endIP) => {
+    const ips = startIP.includes('/') ? getIPsFromCIDR(startIP) : (endIP ? expandRange(startIP, endIP) : expandRange(startIP, startIP));
+    const results = [];
+    var lastPercentage = 0
+
+    const maxRetries = 3; // Number of times to retry
+    let attempts = 0; // Current attempt count
+    let success = false; // Success flag
+    const retryDuring = 500;
+    for (let index = 0; index < ips.length; index++) {
+        const ip = ips[index];
+        var percentage = parseInt(index / ips.length * 100);
+        if (percentage > lastPercentage) {
+            console.log(percentage + "%");
+            lastPercentage = percentage
+        }
+
+        while (attempts < maxRetries && !success) {
+            try {
+                attempts++;
+                // await new Promise(resolve => setTimeout(resolve, 1)); // 1-second delay
+                const country = "CN"
+                results.push({ ip, country });
+                success = true; // Set success to true if no error occurs
+            } catch (error) {
+                console.error(`Attempt ${attempts} Failed to get country for ${ip}: ${error}`);
+
+                if (attempts >= maxRetries) {
+                    console.error('Max retries reached. Exiting.');
+                    process.exit(1);
+                    // throw new Error('Failed to get countries for the given IP range after multiple attempts.');
+                }
+                await new Promise(resolve => setTimeout(resolve, retryDuring)); // 1-second delay
+            }
+        }
+        success = false; 
+        attempts = 0;
     }
+    return results;
 };
 
 const generateFakePublicIPRangesWithMask = () => {
@@ -160,13 +113,13 @@ const processIPs = async (ipRanges) => {
         var { startIP: entryStartIP, endIP: entryEndIP } = getIPFromCIDR(entry)
         var nonOverlappingRanges = getNonOverlappingRanges(entryStartIP, entryEndIP, combinedRanges);
         for (const nonOverlappingRange of nonOverlappingRanges) {
-            const ips = await getCountriesForIPs(nonOverlappingRange.startIP, nonOverlappingRange.endIP);
             if (nonOverlappingRange.headIPRange) {
                 lastIPDecimal = nonOverlappingRange.headIPRange.endIPDecimal + 1;
                 lastStartIP = nonOverlappingRange.headIPRange.startIP;  // Restored the missing assignment.
                 lastCountry = nonOverlappingRange.headIPRange.country;
                 _id = nonOverlappingRange.headIPRange.id;
             }
+            const ips = await getCountriesForIPs(nonOverlappingRange.startIP, nonOverlappingRange.endIP);
             for (const { ip, country } of ips) {
                 if (needUpdate) {
                     if (country !== lastCountry) {
@@ -174,6 +127,8 @@ const processIPs = async (ipRanges) => {
                         if (newIPData.startIPDecimal) {
                             if (ip == nonOverlappingRange.endIP && nonOverlappingRange.tailIPRange) {
                                 // todo
+                                console.log("todo code D2024_10_14 line 130")
+                                process.exit(1);
                             } else {
                                 await IPSchema.updateOne(
                                     { _id },
@@ -187,7 +142,7 @@ const processIPs = async (ipRanges) => {
                                     }
                                 );
                                 lastIPDecimal = newIPData.endIPDecimal + 1;
-                                lastStartIP = newIPData.startIP;
+                                // lastStartIP = newIPData.startIP;
                                 newIPData.startIPDecimal = ipToLong(ip);
                                 newIPData.startIP = ip;
                                 newIPData.endIPDecimal = ipToLong(ip);
@@ -213,7 +168,9 @@ const processIPs = async (ipRanges) => {
                         newIPData.startIP = ip;
                     } else {
                         if (ip == nonOverlappingRange.endIP && nonOverlappingRange.tailIPRange) {
-                            //todo
+                            // todo
+                            console.log("todo code D2024_10_14 line172")
+                            process.exit(1);
                         } else {
                             var ipData = new IPSchema({
                                 ...newIPData,
@@ -242,32 +199,76 @@ const processIPs = async (ipRanges) => {
         }
         if (newIPData.startIPDecimal) {
             if (needUpdate) {
-                await IPSchema.updateOne(
-                    { _id },
-                    {
-                        $set: {
-                            endIP: newIPData.endIP,
-                            endIPDecimal: newIPData.endIPDecimal,
-                            total: getTotalIPs(lastStartIP, newIPData.endIP),
-                            CIDR: convertToCIDR(lastStartIP, newIPData.endIP)
+                if (nonOverlappingRanges.length && nonOverlappingRanges[nonOverlappingRanges.length - 1].tailIPRange
+                    && newIPData.endIPDecimal == nonOverlappingRanges[nonOverlappingRanges.length - 1].tailIPRange.startIPDecimal - 1) {
+                    var tailIPRange = nonOverlappingRanges[nonOverlappingRanges.length - 1].tailIPRange;
+                    await IPSchema.updateOne(
+                        { _id },
+                        {
+                            $set: {
+                                endIP: tailIPRange.endIP,
+                                endIPDecimal: tailIPRange.endIPDecimal,
+                                total: getTotalIPs(lastStartIP, tailIPRange.endIP),
+                                CIDR: convertToCIDR(lastStartIP, tailIPRange.endIP)
+                            }
                         }
-                    }
-                );
-                lastIPDecimal = newIPData.endIPDecimal + 1;
-                lastStartIP = newIPData.startIP;
-                newIPData.startIPDecimal = 0;
+                    );
+                    await IPSchema.deleteOne({
+                        _id: tailIPRange.id
+                    })
+                    lastIPDecimal = tailIPRange.endIPDecimal + 1;
+                    // lastStartIP = newIPData.startIP;
+                    newIPData.startIPDecimal = 0;
+                }else{
+                    await IPSchema.updateOne(
+                        { _id },
+                        {
+                            $set: {
+                                endIP: newIPData.endIP,
+                                endIPDecimal: newIPData.endIPDecimal,
+                                total: getTotalIPs(lastStartIP, newIPData.endIP),
+                                CIDR: convertToCIDR(lastStartIP, newIPData.endIP)
+                            }
+                        }
+                    );
+                    lastIPDecimal = newIPData.endIPDecimal + 1;
+                    lastStartIP = newIPData.startIP;
+                    newIPData.startIPDecimal = 0;
+                }
+
             } else {
-                var ipData = new IPSchema({
-                    ...newIPData,
-                    country: lastCountry,
-                    total: getTotalIPs(newIPData.startIP, newIPData.endIP),
-                    CIDR: convertToCIDR(newIPData.startIP, newIPData.endIP)
-                });
-                await ipData.save();
-                _id = ipData.id;
-                lastIPDecimal = ipData.endIPDecimal + 1;
-                lastStartIP = ipData.startIP;
-                newIPData.startIPDecimal = 0;
+                if (nonOverlappingRanges.length && nonOverlappingRanges[nonOverlappingRanges.length - 1].tailIPRange
+                    && newIPData.endIPDecimal == nonOverlappingRanges[nonOverlappingRanges.length - 1].tailIPRange.startIPDecimal - 1) {
+                    var tailIPRange = nonOverlappingRanges[nonOverlappingRanges.length - 1].tailIPRange;
+                    _id = tailIPRange.id
+                    await IPSchema.updateOne(
+                        { _id },
+                        {
+                            $set: {
+                                startIP: newIPData.startIP,
+                                startIPDecimal: newIPData.startIPDecimal,
+                                total: getTotalIPs(newIPData.startIP, tailIPRange.endIP),
+                                CIDR: convertToCIDR(newIPData.startIP, tailIPRange.endIP)
+                            }
+                        }
+                    );
+                    lastIPDecimal = tailIPRange.endIPDecimal + 1;
+                    // lastStartIP = newIPData.startIP;
+                    newIPData.startIPDecimal = 0;
+                } else {
+                    var ipData = new IPSchema({
+                        ...newIPData,
+                        country: lastCountry,
+                        total: getTotalIPs(newIPData.startIP, newIPData.endIP),
+                        CIDR: convertToCIDR(newIPData.startIP, newIPData.endIP)
+                    });
+                    await ipData.save();
+                    _id = ipData.id;
+                    lastIPDecimal = ipData.endIPDecimal + 1;
+                    lastStartIP = ipData.startIP;
+                    newIPData.startIPDecimal = 0;
+                }
+                
             }
             needUpdate = true;
         }
@@ -284,7 +285,7 @@ if (_startIP && _endIP) {
     // processIPs(publicIPRanges);
     processIPs(
         [
-            { start: '1.14.137.0', end: '1.14.137.255' },
+            { start: '1.14.137.0', end: '1.14.142.255' },
             // { start: '1.14.136.0', end: '1.255.255.255' },
             // { start: '16.0.0.0', end: '16.255.255.255' },
         ]

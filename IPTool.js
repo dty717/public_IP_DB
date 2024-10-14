@@ -83,7 +83,7 @@ function generateIPRanges(startIP, endIP, blockNum = 2 ** 10) {
     const newEndLong = Math.floor(endLong / blockNum) * blockNum;
 
     if (newStartLong != startLong) {
-        ranges.push(`${startIP}-${longToIP(newStartLong)}`);  // Adding /22 subnet mask
+        ranges.push(`${startIP}-${longToIP(newStartLong - 1)}`);  // Adding /22 subnet mask
     }
     for (let i = newStartLong; i < newEndLong; i += blockNum) {
         ranges.push(`${longToIP(i)}/${32 - (blockNum.toString(2).length - 1)}`);  // Adding /22 subnet mask
@@ -266,7 +266,7 @@ function getNonOverlappingRanges(startIP, endIP, combinedRanges) {
             currentStartRange = range.tailIPRange;
         }
     }
-    if(currentDecimal <= endDecimal){
+    if (currentDecimal <= endDecimal) {
         if (currentStartRange) {
             nonOverlappingRanges.push(
                 {
@@ -287,4 +287,4 @@ function getNonOverlappingRanges(startIP, endIP, combinedRanges) {
     return nonOverlappingRanges;
 }
 
-module.exports = { generateIPRangesWithMask, convertToCIDR, getTotalIPs, ipToLong, longToIP, expandRange, getIPsFromCIDR, getIPFromCIDR, combineIPRanges, isOverlapping, publicIPRanges };
+module.exports = { generateIPRangesWithMask, convertToCIDR, getTotalIPs, ipToLong, longToIP, expandRange, getIPsFromCIDR, getIPFromCIDR, combineIPRanges, isOverlapping, publicIPRanges, getNonOverlappingRanges };
