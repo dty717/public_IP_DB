@@ -119,7 +119,7 @@ const processIPs = async (ipRanges) => {
                 lastCountry = nonOverlappingRange.headIPRange.country;
                 _id = nonOverlappingRange.headIPRange.id;
             }
-            const ips = await getFakeCountriesForIPs(nonOverlappingRange.startIP, nonOverlappingRange.endIP);
+            const ips = await getCountriesForIPs(nonOverlappingRange.startIP, nonOverlappingRange.endIP);
             for (const { ip, country } of ips) {
                 if (needUpdate) {
                     if (country !== lastCountry) {
