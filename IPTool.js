@@ -44,8 +44,15 @@ const getIPsFromCIDR = (cidr) => {
     const baseLong = ipToLong(baseIP);
     return Array.from({ length: numIPs }, (_, i) => longToIP(baseLong + i));
 };
-
+var ipRangeRegex = /(\d+\.\d+\.\d+\.\d+)\s*-\s*(\d+\.\d+\.\d+\.\d+)/
 function getIPFromCIDR(cidr) {
+    const ipRangeMatch = cidr.match(ipRangeRegex);
+    if (ipRangeMatch) {
+        return {
+            startIP: ipRangeMatch[1],
+            endIP: ipRangeMatch[2]
+        };
+    }
     const [baseIP, subnetMask] = cidr.split('/');
     const baseLong = ipToLong(baseIP);
     const totalHosts = Math.pow(2, 32 - subnetMask); // Total number of IPs in this subnet
@@ -56,15 +63,34 @@ function getIPFromCIDR(cidr) {
     }; // Convert decimal back to IP format
 }
 
-function generateIPRanges(startIP, endIP, blockNum = 1024) {
-    const startLong = ipToLong(startIP);
-    const endLong = ipToLong(endIP);
+function generateIPRanges(startIP, endIP, blockNum = 2 ** 10) {
+    var startLong = ipToLong(startIP);
+    var endLong = ipToLong(endIP);
+    if (startLong > endLong) {
+        var temp = startLong;
+        startLong = endLong;
+        endLong = temp;
+        temp = startIP;
+        startIP = endIP;
+        endIP = startIP;
+    }
     const ranges = [];
+    if (endLong - startLong < blockNum) {
+        ranges.push(`${startIP}-${endIP}`);
+        return ranges;
+    }
+    const newStartLong = Math.ceil(startLong / blockNum) * blockNum;
+    const newEndLong = Math.floor(endLong / blockNum) * blockNum;
 
-    for (let i = startLong; i <= endLong; i += blockNum) {
+    if (newStartLong != startLong) {
+        ranges.push(`${startIP}-${longToIP(newStartLong)}`);  // Adding /22 subnet mask
+    }
+    for (let i = newStartLong; i < newEndLong; i += blockNum) {
         ranges.push(`${longToIP(i)}/${32 - (blockNum.toString(2).length - 1)}`);  // Adding /22 subnet mask
     }
-
+    if (newEndLong != endLong) {
+        ranges.push(`${longToIP(newEndLong)}-${endIP}`);  // Adding /22 subnet mask
+    }
     return ranges;
 }
 const generateIPRangesWithMask = (IPRanges) => {
@@ -130,43 +156,135 @@ function combineIPRanges(ipRanges) {
     const combinedRanges = [];
 
     for (const range of ipRanges) {
+        const rangeStartDecimal = ipToLong(range.startIP);
+
         if (combinedRanges.length === 0) {
+            // Add the first range
             combinedRanges.push({
                 startIP: range.startIP,
-                endIP: range.endIP
-            }); // Store only start and end IP
+                endIP: range.endIP,
+                headIPRange: range,
+                tailIPRange: range
+            });
         } else {
             const lastRange = combinedRanges[combinedRanges.length - 1];
-            if (ipToLong(lastRange.endIP) + 1 === ipToLong(range.startIP)) {
-                // Merge ranges
-                lastRange.endIP = range.endIP; // Update the end IP of the last range
+
+            // Check if ranges are contiguous (last end IP + 1 matches current start IP)
+            if (ipToLong(lastRange.endIP) + 1 === rangeStartDecimal) {
+                // Merge the ranges by updating the end IP and attributes
+                lastRange.tailIPRange = range;
+                lastRange.endIP = range.endIP;
             } else {
+                // Add the new range if not contiguous
                 combinedRanges.push({
                     startIP: range.startIP,
-                    endIP: range.endIP
-                }); // Store only start and end IP
+                    endIP: range.endIP,
+                    headIPRange: range,
+                    tailIPRange: range
+                });
             }
         }
     }
-
     return combinedRanges;
 }
 
 // Function to check if a new range overlaps with any existing ranges
-function isOverlapping(newRange, existingRanges) {
-    for (const range of existingRanges) {
-        // Check if there is an overlap
-        if (
-            ipToLong(newRange.startIP) <= ipToLong(range.endIP) &&
-            ipToLong(newRange.endIP) >= ipToLong(range.startIP)
-        ) {
-            return true; // Overlap found
-        }
+function isOverlapping(newRange, existingRange) {
+    if (
+        ipToLong(newRange.startIP) <= ipToLong(existingRange.endIP) &&
+        ipToLong(newRange.endIP) >= ipToLong(existingRange.startIP)
+    ) {
+        return true; // Overlap found
     }
     return false; // No overlap if it reaches here
 }
 
 // Other parts of your script remain unchanged
 
+
+function getNonOverlappingRanges(startIP, endIP, combinedRanges) {
+    const startDecimal = ipToLong(startIP);
+    const endDecimal = ipToLong(endIP);
+
+    const nonOverlappingRanges = [];
+    const combinedRangesLen = combinedRanges.length;
+    if (!combinedRangesLen) {
+        nonOverlappingRanges.push(
+            {
+                startIP: startIP,
+                endIP: endIP,
+            }
+        )
+        return nonOverlappingRanges;
+    }
+    let currentDecimal = startDecimal;
+    let currentStartRange;
+    for (let index = 0; index < combinedRangesLen && currentDecimal <= endDecimal; index++) {
+        const range = combinedRanges[index];
+        const rangeStartDecimal = ipToLong(range.startIP);
+        const rangeEndDecimal = ipToLong(range.endIP);
+        if (endDecimal < rangeStartDecimal - 1) {
+            if (currentStartRange) {
+                nonOverlappingRanges.push(
+                    {
+                        startIP: longToIP(currentDecimal),
+                        endIP: endIP,
+                        headIPRange: currentStartRange
+                    }
+                )
+            } else {
+                nonOverlappingRanges.push(
+                    {
+                        startIP: longToIP(currentDecimal),
+                        endIP: endIP,
+                    }
+                )
+            }
+            return nonOverlappingRanges;
+        } else {
+            if (currentDecimal < rangeStartDecimal) {
+                if (currentStartRange) {
+                    nonOverlappingRanges.push(
+                        {
+                            startIP: longToIP(currentDecimal),
+                            endIP: longToIP(rangeStartDecimal - 1),
+                            headIPRange: currentStartRange,
+                            tailIPRange: range.headIPRange
+                        }
+                    )
+                } else {
+                    nonOverlappingRanges.push(
+                        {
+                            startIP: longToIP(currentDecimal),
+                            endIP: longToIP(rangeStartDecimal - 1),
+                            tailIPRange: range.headIPRange
+                        }
+                    )
+                }
+            }
+            currentDecimal = rangeEndDecimal + 1
+            currentStartRange = range.tailIPRange;
+        }
+    }
+    if(currentDecimal <= endDecimal){
+        if (currentStartRange) {
+            nonOverlappingRanges.push(
+                {
+                    startIP: longToIP(currentDecimal),
+                    endIP: endIP,
+                    headIPRange: currentStartRange
+                }
+            )
+        } else {
+            nonOverlappingRanges.push(
+                {
+                    startIP: longToIP(currentDecimal),
+                    endIP: endIP
+                }
+            )
+        }
+    }
+    return nonOverlappingRanges;
+}
 
 module.exports = { generateIPRangesWithMask, convertToCIDR, getTotalIPs, ipToLong, longToIP, expandRange, getIPsFromCIDR, getIPFromCIDR, combineIPRanges, isOverlapping, publicIPRanges };
