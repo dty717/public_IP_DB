@@ -261,9 +261,12 @@ function getNonOverlappingRanges(startIP, endIP, combinedRanges) {
                         }
                     )
                 }
+            } else if (currentDecimal > rangeEndDecimal + 1) {
+
+            } else {
+                currentDecimal = rangeEndDecimal + 1
+                currentStartRange = range.tailIPRange;
             }
-            currentDecimal = rangeEndDecimal + 1
-            currentStartRange = range.tailIPRange;
         }
     }
     if (currentDecimal <= endDecimal) {
