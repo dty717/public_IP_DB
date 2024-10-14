@@ -119,7 +119,7 @@ const processIPs = async (ipRanges) => {
                 lastCountry = nonOverlappingRange.headIPRange.country;
                 _id = nonOverlappingRange.headIPRange.id;
             }
-            const ips = await getCountriesForIPs(nonOverlappingRange.startIP, nonOverlappingRange.endIP);
+            const ips = await getFakeCountriesForIPs(nonOverlappingRange.startIP, nonOverlappingRange.endIP);
             for (const { ip, country } of ips) {
                 if (needUpdate) {
                     if (country !== lastCountry) {
@@ -196,81 +196,85 @@ const processIPs = async (ipRanges) => {
                 newIPData.endIPDecimal = ipToLong(ip);
                 newIPData.endIP = ip;
             }
-        }
-        if (newIPData.startIPDecimal) {
-            if (needUpdate) {
-                if (nonOverlappingRanges.length && nonOverlappingRanges[nonOverlappingRanges.length - 1].tailIPRange
-                    && newIPData.endIPDecimal == nonOverlappingRanges[nonOverlappingRanges.length - 1].tailIPRange.startIPDecimal - 1) {
-                    var tailIPRange = nonOverlappingRanges[nonOverlappingRanges.length - 1].tailIPRange;
-                    await IPSchema.updateOne(
-                        { _id },
-                        {
-                            $set: {
-                                endIP: tailIPRange.endIP,
-                                endIPDecimal: tailIPRange.endIPDecimal,
-                                total: getTotalIPs(lastStartIP, tailIPRange.endIP),
-                                CIDR: convertToCIDR(lastStartIP, tailIPRange.endIP)
+            if (newIPData.startIPDecimal) {
+                if (needUpdate) {
+                    if (nonOverlappingRange.tailIPRange && newIPData.endIPDecimal == nonOverlappingRange.tailIPRange.startIPDecimal - 1) {
+                        var tailIPRange = nonOverlappingRange.tailIPRange;
+                        await IPSchema.deleteOne({
+                            _id: tailIPRange.id
+                        })
+                        await IPSchema.updateOne(
+                            { _id },
+                            {
+                                $set: {
+                                    endIP: tailIPRange.endIP,
+                                    endIPDecimal: tailIPRange.endIPDecimal,
+                                    total: getTotalIPs(lastStartIP, tailIPRange.endIP),
+                                    CIDR: convertToCIDR(lastStartIP, tailIPRange.endIP)
+                                }
                             }
-                        }
-                    );
-                    await IPSchema.deleteOne({
-                        _id: tailIPRange.id
-                    })
-                    lastIPDecimal = tailIPRange.endIPDecimal + 1;
-                    // lastStartIP = newIPData.startIP;
-                    newIPData.startIPDecimal = 0;
-                }else{
-                    await IPSchema.updateOne(
-                        { _id },
-                        {
-                            $set: {
-                                endIP: newIPData.endIP,
-                                endIPDecimal: newIPData.endIPDecimal,
-                                total: getTotalIPs(lastStartIP, newIPData.endIP),
-                                CIDR: convertToCIDR(lastStartIP, newIPData.endIP)
+                        );
+                        tailIPRange._id = _id
+                        tailIPRange.startIP = lastStartIP
+                        tailIPRange.startIPDecimal = ipToLong(lastStartIP);
+                        lastIPDecimal = tailIPRange.endIPDecimal + 1;
+                        // lastStartIP = newIPData.startIP;
+                        newIPData.startIPDecimal = 0;
+                    }else{
+                        await IPSchema.updateOne(
+                            { _id },
+                            {
+                                $set: {
+                                    endIP: newIPData.endIP,
+                                    endIPDecimal: newIPData.endIPDecimal,
+                                    total: getTotalIPs(lastStartIP, newIPData.endIP),
+                                    CIDR: convertToCIDR(lastStartIP, newIPData.endIP)
+                                }
                             }
-                        }
-                    );
-                    lastIPDecimal = newIPData.endIPDecimal + 1;
-                    lastStartIP = newIPData.startIP;
-                    newIPData.startIPDecimal = 0;
-                }
-
-            } else {
-                if (nonOverlappingRanges.length && nonOverlappingRanges[nonOverlappingRanges.length - 1].tailIPRange
-                    && newIPData.endIPDecimal == nonOverlappingRanges[nonOverlappingRanges.length - 1].tailIPRange.startIPDecimal - 1) {
-                    var tailIPRange = nonOverlappingRanges[nonOverlappingRanges.length - 1].tailIPRange;
-                    _id = tailIPRange.id
-                    await IPSchema.updateOne(
-                        { _id },
-                        {
-                            $set: {
-                                startIP: newIPData.startIP,
-                                startIPDecimal: newIPData.startIPDecimal,
-                                total: getTotalIPs(newIPData.startIP, tailIPRange.endIP),
-                                CIDR: convertToCIDR(newIPData.startIP, tailIPRange.endIP)
-                            }
-                        }
-                    );
-                    lastIPDecimal = tailIPRange.endIPDecimal + 1;
-                    // lastStartIP = newIPData.startIP;
-                    newIPData.startIPDecimal = 0;
+                        );
+                        lastIPDecimal = newIPData.endIPDecimal + 1;
+                        lastStartIP = newIPData.startIP;
+                        newIPData.startIPDecimal = 0;
+                    }
+    
                 } else {
-                    var ipData = new IPSchema({
-                        ...newIPData,
-                        country: lastCountry,
-                        total: getTotalIPs(newIPData.startIP, newIPData.endIP),
-                        CIDR: convertToCIDR(newIPData.startIP, newIPData.endIP)
-                    });
-                    await ipData.save();
-                    _id = ipData.id;
-                    lastIPDecimal = ipData.endIPDecimal + 1;
-                    lastStartIP = ipData.startIP;
-                    newIPData.startIPDecimal = 0;
+                    if (nonOverlappingRanges.length && nonOverlappingRange.tailIPRange
+                        && newIPData.endIPDecimal == nonOverlappingRange.tailIPRange.startIPDecimal - 1) {
+                        var tailIPRange = nonOverlappingRange.tailIPRange;
+                        _id = tailIPRange.id
+                        await IPSchema.updateOne(
+                            { _id },
+                            {
+                                $set: {
+                                    startIP: newIPData.startIP,
+                                    startIPDecimal: newIPData.startIPDecimal,
+                                    total: getTotalIPs(newIPData.startIP, tailIPRange.endIP),
+                                    CIDR: convertToCIDR(newIPData.startIP, tailIPRange.endIP)
+                                }
+                            }
+                        );
+                        tailIPRange.startIP = newIPData.startIP
+                        tailIPRange.startIPDecimal = newIPData.startIPDecimal
+                        lastIPDecimal = tailIPRange.endIPDecimal + 1;
+                        // lastStartIP = newIPData.startIP;
+                        newIPData.startIPDecimal = 0;
+                    } else {
+                        var ipData = new IPSchema({
+                            ...newIPData,
+                            country: lastCountry,
+                            total: getTotalIPs(newIPData.startIP, newIPData.endIP),
+                            CIDR: convertToCIDR(newIPData.startIP, newIPData.endIP)
+                        });
+                        await ipData.save();
+                        _id = ipData.id;
+                        lastIPDecimal = ipData.endIPDecimal + 1;
+                        lastStartIP = ipData.startIP;
+                        newIPData.startIPDecimal = 0;
+                    }
+                    
                 }
-                
+                needUpdate = true;
             }
-            needUpdate = true;
         }
     }
 };
@@ -285,8 +289,9 @@ if (_startIP && _endIP) {
     // processIPs(publicIPRanges);
     processIPs(
         [
-            { start: '1.14.137.0', end: '1.14.142.255' },
-            // { start: '1.14.136.0', end: '1.255.255.255' },
+            // { start: '1.14.142.1', end: '1.14.142.3' },
+            // { start: '1.14.142.8', end: '1.14.142.12' },
+            { start: '1.14.142.0', end: '1.14.142.20' },
             // { start: '16.0.0.0', end: '16.255.255.255' },
         ]
     );
