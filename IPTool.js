@@ -1,13 +1,59 @@
+/*
+Reserved_IP_addresses from https://en.wikipedia.org/wiki/Reserved_IP_addresses
+Address block	     Address range	                Amount 	      Scope	            Description
+0.0.0.0/8	         0.0.0.0–0.255.255.255	        16777216	  Software	        Current (local, "this") network[1]
+10.0.0.0/8	         10.0.0.0–10.255.255.255	    16777216	  Private network	Used for local communications within a private network[3]
+100.64.0.0/10	     100.64.0.0–100.127.255.255	    4194304	      Private network	Shared address space[4] for communications between a service provider and its subscribers when using a carrier-grade NAT
+127.0.0.0/8	         127.0.0.0–127.255.255.255	    16777216	  Host	            Used for loopback addresses to the local host[1]
+169.254.0.0/16	     169.254.0.0–169.254.255.255	65536	      Subnet	        Used for link-local addresses[5] between two hosts on a single link when no IP address is otherwise specified, such as would have normally been retrieved from a DHCP server
+172.16.0.0/12	     172.16.0.0–172.31.255.255	    1048576	      Private network	Used for local communications within a private network[3]
+192.0.0.0/24	     192.0.0.0–192.0.0.255	        256	          Private network	IETF Protocol Assignments, DS-Lite (/29)[1]
+192.0.2.0/24	     192.0.2.0–192.0.2.255	        256	          Documentation	    Assigned as TEST-NET-1, documentation and examples[6]
+192.88.99.0/24	     192.88.99.0–192.88.99.255	    256	          Internet	        Reserved.[7] Formerly used for IPv6 to IPv4 relay[8] (included IPv6 address block 2002::/16).
+192.168.0.0/16	     192.168.0.0–192.168.255.255	65536	      Private network	Used for local communications within a private network[3]
+198.18.0.0/15	     198.18.0.0–198.19.255.255	    131072	      Private network	Used for benchmark testing of inter-network communications between two separate subnets[9]
+198.51.100.0/24	     198.51.100.0–198.51.100.255	256	          Documentation	    Assigned as TEST-NET-2, documentation and examples[6]
+203.0.113.0/24	     203.0.113.0–203.0.113.255	    256	          Documentation	    Assigned as TEST-NET-3, documentation and examples[6]
+224.0.0.0/4	         224.0.0.0–239.255.255.255	    268435456	  Internet	        In use for multicast[10] (former Class D network)
+233.252.0.0/24	     233.252.0.0–233.252.0.255	    256	          Documentation 	Assigned as MCAST-TEST-NET, documentation and examples (Note that this is part of the above multicast space.)[10][11]
+240.0.0.0/4	         240.0.0.0–255.255.255.254	    268435455	  Internet	        Reserved for future use[12] (former Class E network)
+255.255.255.255/32	 255.255.255.255	            1	          Subnet        	Reserved for the "limited broadcast" destination address[1]
+*/
+/*? need to be valid
+not match range 
+192.0.1.0/24         192.0.1.0-192.0.1.255
+
+*/
+// test 198.51.99.255
+
+/*
+1.0.0.0         - 9.255.255.255
+11.0.0.0        - 100.63.255.255
+100.128.0.0     - 126.255.255.255
+128.0.0.0       - 169.253.255.255
+169.250.0.0     - 172.15.255.255
+172.32.0.0      - 191.255.255.255
+192.0.3.0       - 192.88.98.255
+192.88.100.0    - 192.167.255.255
+192.169.0.0     - 198.17.255.255
+198.20.0.0      - 198.51.99.255
+198.51.101.0    - 203.0.112.255
+203.0.114.0     - 223.255.255.255
+*/
+
 const publicIPRanges = [
-    { start: '1.0.0.0', end: '9.255.255.255' },
-    { start: '11.0.0.0', end: '126.255.255.255' },
-    { start: '129.0.0.0', end: '169.253.255.255' },
-    { start: '169.255.0.0', end: '172.15.255.255' },
-    { start: '172.32.0.0', end: '191.0.1.255' },
-    { start: '192.0.3.0', end: '192.88.98.255' },
-    { start: '192.88.100.0', end: '192.167.255.255' },
-    { start: '192.169.0.0', end: '198.17.255.255' },
-    { start: '198.20.0.0', end: '223.255.255.255' },
+    { startIP: "1.0.0.0", endIP: "9.255.255.255" },
+    { startIP: "11.0.0.0", endIP: "100.63.255.255" },
+    { startIP: "100.128.0.0", endIP: "126.255.255.255" },
+    { startIP: "128.0.0.0", endIP: "169.253.255.255" },
+    { startIP: "169.250.0.0", endIP: "172.15.255.255" },
+    { startIP: "172.32.0.0", endIP: "191.255.255.255" },
+    { startIP: "192.0.3.0", endIP: "192.88.98.255" },
+    { startIP: "192.88.100.0", endIP: "192.167.255.255" },
+    { startIP: "192.169.0.0", endIP: "198.17.255.255" },
+    { startIP: "198.20.0.0", endIP: "198.51.99.255" },
+    { startIP: "198.51.101.0", endIP: "203.0.112.255" },
+    { startIP: "203.0.114.0", endIP: "223.255.255.255" }
 ];
 
 function ipToLong(ip) {
