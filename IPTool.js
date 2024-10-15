@@ -234,6 +234,17 @@ function combineIPRanges(ipRanges) {
     return combinedRanges;
 }
 
+// Function to check if a ip within a existing range
+function isInRange(ip, existingRange) {
+    if (
+        ipToLong(ip) <= ipToLong(existingRange.endIP) &&
+        ipToLong(ip) >= ipToLong(existingRange.startIP)
+    ) {
+        return true; // Overlap found
+    }
+    return false; // No overlap if it reaches here
+}
+
 // Function to check if a new range overlaps with any existing ranges
 function isOverlapping(newRange, existingRange) {
     if (
@@ -336,4 +347,4 @@ function getNonOverlappingRanges(startIP, endIP, combinedRanges) {
     return nonOverlappingRanges;
 }
 
-module.exports = { generateIPRangesWithMask, convertToCIDR, getTotalIPs, ipToLong, longToIP, expandRange, getIPsFromCIDR, getIPFromCIDR, combineIPRanges, isOverlapping, publicIPRanges, getNonOverlappingRanges };
+module.exports = { generateIPRangesWithMask, convertToCIDR, getTotalIPs, ipToLong, longToIP, expandRange, getIPsFromCIDR, getIPFromCIDR, combineIPRanges, isOverlapping, publicIPRanges, getNonOverlappingRanges, isInRange };

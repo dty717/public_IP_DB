@@ -1,9 +1,10 @@
 
 const mongoose = require('mongoose');
-const { getCountriesForIPs } = require('./ip_country');
+const { getCountriesForIPs, getCountryForIPsUsingIPRange } = require('./ip_country');
 const { ipToLong, generateIPRangesWithMask, convertToCIDR, getIPFromCIDR, longToIP, getTotalIPs, isOverlapping, publicIPRanges, combineIPRanges, getNonOverlappingRanges, getIPsFromCIDR, expandRange } = require('./IPTool');
 const { mongoUri } = require('./config'); // Import the config file
 require('./models/IPSchema');
+require('./models/QuickIPSchema');
 
 const _startIP = process.argv.length === 4 ? process.argv[2] : null;
 const _endIP = process.argv.length === 4 ? process.argv[3] : null;
@@ -24,7 +25,9 @@ mongoose.connection.on('error', err => {
     console.error('Error connecting to mongo', err);
 });
 
-const IPSchema = mongoose.model('IP');
+// const IPSchema = mongoose.model('IP');
+// const QuickIPSchema = mongoose.model('QuickIP');
+const IPSchema = mongoose.model('QuickIP');
 
 // Main function to get country information for IPs
 const getFakeCountriesForIPs = async (startIP, endIP) => {
@@ -75,6 +78,9 @@ const generateFakePublicIPRangesWithMask = () => {
     ]
 };
 
+// const getCountriesForIPsFun = getCountriesForIPs;
+const getCountriesForIPsFun = getCountryForIPsUsingIPRange;
+
 const processIPs = async (ipRanges) => {
     var IPList = generateIPRangesWithMask(ipRanges);
     var IPListLen = IPList.length;
@@ -119,7 +125,7 @@ const processIPs = async (ipRanges) => {
                 lastCountry = nonOverlappingRange.headIPRange.country;
                 _id = nonOverlappingRange.headIPRange.id;
             }
-            const ips = await getCountriesForIPs(nonOverlappingRange.startIP, nonOverlappingRange.endIP);
+            const ips = await getCountriesForIPsFun(nonOverlappingRange.startIP, nonOverlappingRange.endIP);
             for (const { ip, country } of ips) {
                 if (needUpdate) {
                     if (country !== lastCountry) {
@@ -289,9 +295,9 @@ if (_startIP && _endIP) {
     // processIPs(publicIPRanges);
     processIPs(
         [
-            // { start: '1.14.142.1', end: '1.14.142.3' },
+            { start: '1.0.0.0', end: '1.255.255.255' },
             // { start: '1.14.142.8', end: '1.14.142.12' },
-            { start: '1.14.142.0', end: '1.14.142.20' },
+            // { start: '1.14.142.0', end: '1.14.142.20' },
             // { start: '16.0.0.0', end: '16.255.255.255' },
         ]
     );
