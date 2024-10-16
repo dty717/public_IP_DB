@@ -24,7 +24,7 @@ const getCountry = (ip) => {
         });
     });
 };
-var IPRangeRegex = /inetnum\s*:\s*(\d+\.\d+\.\d+\.\d+)\s*-\s*(\d+\.\d+\.\d+\.\d+)/
+var IPRangeRegex = /(?:inetnum|NetRange)\s*:\s*(\d+\.\d+\.\d+\.\d+)\s*-\s*(\d+\.\d+\.\d+\.\d+)/
 // Function to fetch country information and the ip range for a given IP address
 const getCountryAndIPRange = (ip) => {
     // return new Promise(resolve => setTimeout(()=>resolve("AU"), 10));
@@ -43,6 +43,10 @@ const getCountryAndIPRange = (ip) => {
             const countryMatch = stdout.match(countryRegex);
             if (countryMatch) {
                 const ipRangeMatch = stdout.match(IPRangeRegex);
+                if(!ipRangeMatch){
+                    console.log("ipRangeMatch null",ip, stdout)
+                    process.exit(1);
+                }
                 resolve(
                     {
                         country: countryMatch[1].toUpperCase(),
