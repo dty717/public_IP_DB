@@ -31,7 +31,11 @@ const getCountryAndIPRange = (ip) => {
     return new Promise((resolve, reject) => {
         exec(`whois ${ip}`, (error, stdout) => {
             if (error) {
-                return reject(`Error: ${error.message}`);
+                if (error.message.includes('Timeout') && stdout.length > 100) {
+
+                } else {
+                    return reject(`Error: ${error.message}`);
+                }
             }
             if (stdout.includes('ERROR')) {
                 console.log(ip, stdout)
