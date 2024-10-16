@@ -41,7 +41,9 @@ const getCountryAndIPRange = (ip) => {
                 console.log(ip, stdout)
                 process.exit(1);
             }
-            if (stdout.lastIndexOf("whois.apnic.net") != -1) {
+            var lastMin = Math.min(stdout.lastIndexOf("whois.afrinic.net"),stdout.lastIndexOf("whois.apnic.net"),
+                stdout.lastIndexOf("whois.arin.net"),stdout.lastIndexOf("whois.lacnic.net"));
+            if ( lastMin != -1) {
                 stdout = stdout.substring(stdout.lastIndexOf("whois.apnic.net"))
             }
             const countryMatch = stdout.match(countryRegex);
