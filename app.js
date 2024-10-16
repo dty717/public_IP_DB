@@ -117,7 +117,7 @@ const processIPs = async (ipRanges) => {
 
     for (const entry of IPList) {
         var { startIP: entryStartIP, endIP: entryEndIP } = getIPFromCIDR(entry)
-        var nonOverlappingRanges = getNonOverlappingRanges(entryStartIP, entryEndIP, combinedRanges);
+        let nonOverlappingRanges = getNonOverlappingRanges(entryStartIP, entryEndIP, combinedRanges);
         for (const nonOverlappingRange of nonOverlappingRanges) {
             if (nonOverlappingRange.headIPRange) {
                 lastIPDecimal = nonOverlappingRange.headIPRange.endIPDecimal + 1;
@@ -125,13 +125,13 @@ const processIPs = async (ipRanges) => {
                 lastCountry = nonOverlappingRange.headIPRange.country;
                 _id = nonOverlappingRange.headIPRange.id;
             }
-            const ips = await getCountriesForIPsFun(nonOverlappingRange.startIP, nonOverlappingRange.endIP);
+            let ips = await getCountriesForIPsFun(nonOverlappingRange.startIP, nonOverlappingRange.endIP);
             for (const { ip, country } of ips) {
                 if (needUpdate) {
                     if (country !== lastCountry) {
                         needUpdate = false;
                         if (newIPData.startIPDecimal) {
-                            if (ip == nonOverlappingRange.endIP && nonOverlappingRange.tailIPRange) {
+                            if (ip == nonOverlappingRange.endIP && nonOverlappingRange.tailIPRange && nonOverlappingRange.tailIPRange == country) {
                                 // todo
                                 console.log("todo code D2024_10_14 line 130")
                                 process.exit(1);
@@ -202,9 +202,12 @@ const processIPs = async (ipRanges) => {
                 newIPData.endIPDecimal = ipToLong(ip);
                 newIPData.endIP = ip;
             }
+            ips.length = 0;
+            ips = null
             if (newIPData.startIPDecimal) {
                 if (needUpdate) {
-                    if (nonOverlappingRange.tailIPRange && newIPData.endIPDecimal == nonOverlappingRange.tailIPRange.startIPDecimal - 1) {
+                    if (nonOverlappingRange.tailIPRange && newIPData.endIPDecimal == nonOverlappingRange.tailIPRange.startIPDecimal - 1 
+                        && lastCountry == nonOverlappingRange.tailIPRange.country) {
                         var tailIPRange = nonOverlappingRange.tailIPRange;
                         await IPSchema.deleteOne({
                             _id: tailIPRange.id
@@ -282,6 +285,8 @@ const processIPs = async (ipRanges) => {
                 needUpdate = true;
             }
         }
+        nonOverlappingRanges.length = 0
+        nonOverlappingRanges = null;
     }
 };
 

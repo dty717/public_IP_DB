@@ -16,7 +16,7 @@ const getCountry = (ip) => {
             }
             const countryMatch = stdout.match(countryRegex);
             if (countryMatch) {
-                resolve(countryMatch[1]);
+                resolve(countryMatch[1].toUpperCase());
             } else {
                 console.log(ip, stdout)
                 process.exit(1);
@@ -37,12 +37,15 @@ const getCountryAndIPRange = (ip) => {
                 console.log(ip, stdout)
                 process.exit(1);
             }
+            if (stdout.lastIndexOf("whois.apnic.net") != -1) {
+                stdout = stdout.substring(stdout.lastIndexOf("whois.apnic.net"))
+            }
             const countryMatch = stdout.match(countryRegex);
             if (countryMatch) {
                 const ipRangeMatch = stdout.match(IPRangeRegex);
                 resolve(
                     {
-                        country: countryMatch[1],
+                        country: countryMatch[1].toUpperCase(),
                         ipRange: {
                             startIP: ipRangeMatch[1],
                             endIP: ipRangeMatch[2]
