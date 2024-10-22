@@ -32,7 +32,6 @@ const getCountryAndIPRange = (ip) => {
         exec(`whois ${ip}`, (error, stdout) => {
             if (error) {
                 if ((error.message.includes('Timeout')||error.message.includes('Name or service not known')) && stdout.length > 100) {
-
                 } else {
                     return reject(`Error: ${error.message}`);
                 }
@@ -41,7 +40,7 @@ const getCountryAndIPRange = (ip) => {
                 console.log(ip, stdout)
                 process.exit(1);
             }
-            var lastMin = Math.min(stdout.lastIndexOf("whois.afrinic.net"),stdout.lastIndexOf("whois.apnic.net"),
+            var lastMin = Math.max(stdout.lastIndexOf("whois.afrinic.net"),stdout.lastIndexOf("whois.apnic.net"),
                 stdout.lastIndexOf("whois.arin.net"),stdout.lastIndexOf("whois.lacnic.net"));
             if ( lastMin != -1) {
                 stdout = stdout.substring(lastMin)
